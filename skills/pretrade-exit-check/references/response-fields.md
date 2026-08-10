@@ -3,9 +3,11 @@
 Live capture from the production engine — **not a hand-written example** (nothing
 here is invented; this is what the endpoint returned).
 
-- captured: **2026-08-10T10:49:36.434Z**
-- Base block (liquidity axis): **49784814**
-- token: WETH (`0x4200000000000000000000000000000000000006`), `sizeUSD: "1000"`
+- captured: **2026-08-10T18:10:02.501Z**
+- Base block (liquidity axis): **49798027**
+- token: `0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf` (cbBTC), `sizeUSD: "1000"`
+- all 5 axes reported on this capture, and the exit check reached a conclusion —
+  the fields below are shown doing their job, not sitting empty
 - validity window: **3000 ms** (`validUntil - ts`)
 
 ## What decides the verdict
@@ -40,52 +42,51 @@ ones present in the live capture at the bottom of this page.
 ```json
 {
  "chain": "base",
- "token": "0x4200000000000000000000000000000000000006",
+ "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
  "verdict": "clear",
  "triggers": [],
- "confidence": "medium",
+ "confidence": "high",
  "reasons": [
-  "no provable trap detected. This is NOT a safety rating: it means none of the checks that can PROVE a trap (NO_EXIT_VENUE, EXIT_LIQUIDITY_DRAINED, TRADING_DISABLED) fired at this block. Structural risk — age, holder concentration, liquidity depth, transfer restrictions — is reported in risk_profile and can still be severe",
-  "could not check F_CONC — reported as unknown, never as clean; confidence reduced accordingly"
+  "no provable trap detected. This is NOT a safety rating: it means none of the checks that can PROVE a trap (NO_EXIT_VENUE, EXIT_LIQUIDITY_DRAINED, TRADING_DISABLED) fired at this block. Structural risk — age, holder concentration, liquidity depth, transfer restrictions — is reported in risk_profile and can still be severe"
  ],
  "risk_profile": {
   "age": {
-   "ageDays": 1143.6,
-   "genesisBlock": 381217,
-   "note": "1143.6 days since the first transfer — an established history, which says nothing about today's liquidity"
+   "ageDays": 710.56,
+   "genesisBlock": 19101898,
+   "note": "710.56 days since the first transfer — an established history, which says nothing about today's liquidity"
   },
   "concentration": {
-   "top1SharePct": null,
-   "top10SharePct": null,
+   "top1SharePct": 82.2985,
+   "top10SharePct": 90.2837,
    "holders": null,
-   "holdersExact": null,
-   "source": null,
-   "asOfBlock": null,
-   "ageSec": null,
-   "stale": null,
-   "note": "holder concentration could not be computed for this token — not a clean result, an absent one"
+   "holdersExact": false,
+   "source": "graph",
+   "asOfBlock": 49797953,
+   "ageSec": 140,
+   "stale": false,
+   "note": "top-1 holder holds 82.2985% of supply, top-10 hold 90.2837%. A single holder that large can move the price alone. Read it with care: pool and treasury CONTRACTS are counted as holders here, so a mature token whose supply sits in its own pool looks identical to one wallet holding everything"
   },
   "liquidity": {
-   "poolCount": 32,
+   "poolCount": 45,
    "venueCount": 13,
-   "largestPoolSharePct": 68.32,
-   "exitLiquidityUsd": 81553087.89,
-   "note": "32 pool(s) found across 13 venue(s), holding $81553087.89 of counter asset (WETH+USDC) — that is the pot your sell would be paid from"
+   "largestPoolSharePct": 16.08,
+   "exitLiquidityUsd": 40275191.6,
+   "note": "45 pool(s) found across 13 venue(s), holding $40275191.6 of counter asset (WETH+USDC) — that is the pot your sell would be paid from"
   },
   "oracle": {
-   "source": "chainlink:ETH / USD",
-   "deviationBps": 16,
-   "stalenessSec": 1186,
-   "note": "cross-checked against chainlink:ETH / USD; the pool mid differs from the feed by 16 bps"
+   "source": "chainlink:BTC / USD",
+   "deviationBps": 2,
+   "stalenessSec": 72,
+   "note": "cross-checked against chainlink:BTC / USD; the pool mid differs from the feed by 2 bps"
   },
   "transferability": {
    "sellTaxRaw": null,
    "buyTaxRaw": null,
-   "hasBlacklist": false,
+   "hasBlacklist": true,
    "hasMaxLimit": false,
    "tradingEnabled": null,
-   "fingerprints": "none",
-   "note": "no tax, blacklist, limit or trading-gate function was found. Absence of these fingerprints is a negative result on a known list of patterns — not proof that the token is sellable"
+   "fingerprints": "isBlacklisted",
+   "note": "a blacklist function exists. On its own this is not a trap: USDC and cbBTC have one too. It means the issuer CAN freeze an address, which is a governance fact, not a measurement of today's behaviour"
   }
  },
  "flags": {
@@ -93,65 +94,75 @@ ones present in the live capture at the bottom of this page.
    "severity": "low",
    "confidence": "high",
    "metrics": {
-    "poolsWithLiquidity": 32,
-    "largestPoolSharePct": 68.32,
-    "totalTokenInPoolsHuman": 39971.15887403373,
+    "poolsWithLiquidity": 45,
+    "largestPoolSharePct": 16.08,
+    "totalTokenInPoolsHuman": 665.14870788,
     "venueCount": 13,
-    "exitLiquidityUsd": 81553087.89,
-    "exitLiquiditySource": "usdc",
+    "exitLiquidityUsd": 40275191.6,
+    "exitLiquiditySource": "usdc+weth@chainlink",
     "lpConcentrationPct": null,
     "unmeasuredVenues": 0,
     "unmeasuredVenueNames": null,
     "factoriesChecked": 13,
     "venuesUnread": 0,
-    "singletonPoolsSeen": 1,
+    "singletonPoolsSeen": 10,
     "singletonPoolsCounted": 1,
-    "singletonPoolsRejected": 0,
-    "singletonPoolsHooked": 0,
-    "singletonScanTruncated": false,
-    "asOfBlockFirst": 49784813,
-    "asOfBlock": 49784814
+    "singletonPoolsRejected": 8,
+    "singletonPoolsHooked": 7,
+    "singletonScanTruncated": true,
+    "asOfBlockFirst": 49798026,
+    "asOfBlock": 49798027
    }
   },
   "F_CONC": {
-   "severity": "unknown",
-   "confidence": "low",
-   "metrics": {},
-   "reason": "token spans 49403596 blocks since genesis = 4941 pages of 10000 (cap 40); full-history balance reconstruction is not affordable on a per-call budget"
+   "severity": "high",
+   "confidence": "medium",
+   "metrics": {
+    "holders": null,
+    "top1SharePct": 82.2985,
+    "top10SharePct": 90.2837,
+    "decimals": 8,
+    "source": "graph",
+    "asOfBlock": 49797953,
+    "fromCache": true,
+    "cachedAgeSec": 140,
+    "stale": false,
+    "staleMaxSec": 86400,
+    "holdersExact": false
+   }
   },
   "F_AGE": {
    "severity": "low",
    "confidence": "high",
    "metrics": {
-    "genesisBlock": 381217,
-    "ageSeconds": 98807192,
-    "ageDays": 1143.6,
-    "firstTransferHash": "0x546e8757e6798682d23878b9cb23acc54270487709df2d0714e95ad2d112ec44"
+    "genesisBlock": 19101898,
+    "ageSeconds": 61392256,
+    "ageDays": 710.56,
+    "firstTransferHash": "0x2b0bbc609005d30e11a0152cc1e552538ebba225cd194961fb3780e47bcd2a90"
    }
   },
   "F_FOT": {
-   "severity": "low",
-   "confidence": "medium",
+   "severity": "high",
+   "confidence": "high",
    "metrics": {
-    "fingerprints": "none",
+    "fingerprints": "isBlacklisted",
     "sellTaxRaw": null,
     "buyTaxRaw": null,
     "tradingEnabled": null,
-    "hasBlacklist": false,
+    "hasBlacklist": true,
     "hasMaxLimit": false,
     "probesUnread": 0
-   },
-   "reason": "no known tax/blacklist/limit fingerprints (heuristic — not a full audit)"
+   }
   },
   "O_SANITY": {
    "severity": "low",
    "confidence": "high",
    "metrics": {
-    "source": "chainlink:ETH / USD",
-    "stalenessSec": 1186,
-    "deviationBps": 16,
-    "feedPriceUsd": 1917.43461885,
-    "poolMidUsd": 1920.5303615200608,
+    "source": "chainlink:BTC / USD",
+    "stalenessSec": 72,
+    "deviationBps": 2,
+    "feedPriceUsd": 63902.54,
+    "poolMidUsd": 63890.9953043413,
     "feedStableHeartbeat": false
    }
   }
@@ -159,45 +170,77 @@ ones present in the live capture at the bottom of this page.
  "quote": {
   "direction": "buy",
   "tokenIn": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  "tokenOut": "0x4200000000000000000000000000000000000006",
-  "executablePrice": 0.0005214424247520731,
-  "priceImpactBps": 0,
-  "depthAtSize": 0.5214424247520731,
-  "worstCaseSlippageBps": 0,
+  "tokenOut": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+  "executablePrice": 0.00001564358,
+  "priceImpactBps": 5.1610367691268255,
+  "depthAtSize": 0.01564358,
+  "worstCaseSlippageBps": 5.1610367691268255,
   "confidence": "high",
   "route": {
    "dex": "univ3",
    "path": [
     "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-    "0x4200000000000000000000000000000000000006"
+    "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf"
    ],
    "pools": [
-    "0xd0b53D9277642d899DF5C87A3966A349A798F224"
+    "0xfBB6Eed8e7aa03B138556eeDaF5D271A5E1e43ef"
    ]
   }
  },
  "sizeUSD": "1000",
  "disclaimer": "Informational economic-safety signal, not financial advice. verdict \"clear\" means NO PROVABLE TRAP was detected at this block — it is not a safety rating and not a prediction; read risk_profile for structural risk. verdict \"avoid\" means a listed trap was conclusive. Checks are heuristics over on-chain state and can miss novel traps.",
- "ts": 1786358976434,
- "validUntil": 1786358979434,
+ "ts": 1786385402501,
+ "validUntil": 1786385405501,
  "coverage": {
   "axesExpected": 5,
-  "axesReporting": 4
+  "axesReporting": 5
  },
  "liquidityCoverage": {
   "conclusive": true,
-  "poolsFound": 32,
+  "poolsFound": 45,
   "factoriesChecked": 13,
   "unmeasuredVenues": 0,
   "unmeasuredVenueNames": [],
   "venuesUnread": 0,
-  "singletonPoolsSeen": 1,
+  "singletonPoolsSeen": 10,
   "singletonPoolsCounted": 1,
-  "singletonPoolsRejected": 0,
-  "singletonPoolsHooked": 0,
-  "singletonScanTruncated": false,
-  "asOfBlockFirst": 49784813,
-  "asOfBlock": 49784814
+  "singletonPoolsRejected": 8,
+  "singletonPoolsHooked": 7,
+  "singletonScanTruncated": true,
+  "asOfBlockFirst": 49798026,
+  "asOfBlock": 49798027
  }
 }
 ```
+
+## When an axis has no data at all
+
+The capture above has every axis reporting. This one does not, and it is included
+because the shape of a MISSING answer is part of the contract.
+
+Same endpoint, a different token, captured earlier — WETH
+(`0x4200000000000000000000000000000000000006`), captured
+**2026-08-10T10:49:36.434Z**:
+
+```json
+{ "coverage": {"axesExpected":5,"axesReporting":4},
+  "confidence": "medium",
+  "risk_profile": { "concentration": {
+    "top1SharePct": null,
+    "top10SharePct": null,
+    "holders": null,
+    "holdersExact": null,
+    "source": null,
+    "asOfBlock": null,
+    "ageSec": null,
+    "stale": null,
+    "note": "holder concentration could not be computed for this token — not a clean result, an absent one"
+  } } }
+```
+
+Holder data for this token comes from one source, and that source did not answer.
+The reply says so in fields rather than in prose: every number is `null`,
+`ageSec` is `null` because there is no value to date, and `stale` is `null`
+because there is nothing for a freshness flag to describe — not `false`, which
+would assert that a non-existent value is fresh. `coverage` drops to 4/5 and `confidence` falls with it. The other four axes are unaffected and still carry
+their numbers.
