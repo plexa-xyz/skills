@@ -9,7 +9,7 @@ A wallet-security scanner answers "is this transaction malicious". This answers
 ## Install
 
 ```bash
-npx skills add <org>/<repo>
+npx skills add plexa-xyz/skills
 ```
 
 ## What it costs
