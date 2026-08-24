@@ -81,6 +81,28 @@ The response is JSON. The fields that decide anything:
 | `validUntil` | The answer is valid for **3000 ms** from `ts`. It is a snapshot of one block, not a standing rating. Re-check before acting on a stale answer. |
 | `spotPrice: null` | Not a field of the embedded `quote` above: `spotPrice` belongs to the standalone /v1/quote response — the other endpoint on this same engine — and is named here because it is the clearest case of a rule that holds for every number in both. A value that could not be measured comes back as `null` **with the reason**, never as a guess and never as `0`. Treat "unknown" as unknown. |
 
+### What else comes back besides the verdict
+
+The verdict and the 5 axes are the decision. These six blocks are the
+CONTEXT around it — added after this skill was first written, and they are what a
+market-data lookup cannot give you next to an executable price.
+
+| block | what it is |
+|---|---|
+| `identity` | `name`, `symbol`, `decimals`, `totalSupply` read straight from the token contract at this block — not from a listing database that can be stale or wrong about a fork. |
+| `valuation.fdvExecutableUsd` | Fully-diluted value at the price YOUR size can actually execute at. Deliberately different from a market-data site's market cap: the executable price is worse than spot on a thin book, and `totalSupply` is THIS chain's supply. The vendor's global figure travels in the same response as `market.marketCapUsd` — compare them, do not equate them. |
+| `ownership` | `ownerRenounced`, `isMintable`, the creator address and the creator's remaining share. `ownerRenounced: null` means no `owner()` answered — **unknown, which is not the same as renounced**. |
+| `dormancy` | How long the top holder has sat still. Rests on the holder axis: when that axis produces nothing, this block is `null` and says why. |
+| `market` | Third-party market data (spot price, 24h volume, market cap, holder count), republished as-is and signed as theirs in `sources`. We did not measure any of it. `market.priceUsdSpot` is a SPOT print — the price your order gets is `quote.executablePrice`. |
+| `sources` | **The map of who said what.** Every field of the response is attributable: `measured`, `unavailable`, `derived`, `vendor`. `unavailable:<reason>` names the gap instead of hiding it — that is how "we could not check" stays distinguishable from "we checked and it is fine". |
+
+🔴 **Read `sources` before you trust a number.** `measured` is ours, off the chain,
+this call. `derived` is ours, computed from other fields — the formula is in the
+value. `vendor:<name>` is somebody else's number that we republish without
+re-measuring. `unavailable:<reason>` is a hole with a name. A response where half
+the map says `vendor` is a different product from one where it says `measured`,
+and the map is the only way to tell them apart.
+
 ### Two answers side by side
 
 The same `verdict` word covers two different states. The difference is in the numbers.
