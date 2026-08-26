@@ -125,7 +125,9 @@ this token cannot be measured pool-by-pool.
 
 - **Base only.** The exit pot is measured across 13 liquidity factories
   (Uniswap v3, Aerodrome AMM and Slipstream, PancakeSwap v3, SushiSwap v3 and the
-  v2 family), plus Uniswap v4 by per-pool simulation. Prices come from two of them.
+  v2 family), plus Uniswap v4 by per-pool simulation. Prices come from Uniswap v3,
+  Aerodrome, Aerodrome Slipstream and Uniswap v4 — the venues whose quoter we have
+  confirmed against the live market; the rest count toward the exit pot only.
 - **Not a prediction.** It describes the state of one block; the next block can differ.
 - **Absence of a trap is not proof of safety.** Novel traps that are not on the
   checked list will not fire.
