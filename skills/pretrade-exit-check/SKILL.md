@@ -1,14 +1,14 @@
 ---
 name: pretrade-exit-check
-description: Use when the user is about to buy, sell, or size a position in an unfamiliar ERC-20 token on Base and asks whether it can be sold again, how much can be sold without moving the price, what the realizable fill price is, whether the pool is deep enough to exit, whether a token looks like a honeypot or a rug, or how bad slippage would be at a given size; also when a wallet-security check has already said a transaction is not malicious and the remaining question is economic — is there anything to exit into. Base chain only. Not for BTC/ETH-only wallets and not for tokens outside Base.
+description: Use when the user is about to buy, sell, or size a position in an unfamiliar ERC-20 token on Base, Polygon or Arbitrum and asks whether it can be sold again, how much can be sold without moving the price, what the realizable fill price is, whether the pool is deep enough to exit, whether a token looks like a honeypot or a rug, or how bad slippage would be at a given size; also when a wallet-security check has already said a transaction is not malicious and the remaining question is economic — is there anything to exit into. Base, Polygon and Arbitrum only. Not for BTC/ETH-only wallets and not for tokens outside those networks.
 license: MIT
 metadata:
   author: plexa
   homepage: https://api.getplexa.com
-  network: base
+  network: base, polygon, arbitrum
 ---
 
-# Pre-trade exit check (Base)
+# Pre-trade exit check (Base · Polygon · Arbitrum)
 
 Answers one question a wallet-security check does not: **if you buy this token, is
 there anything to sell it back into?**
@@ -29,7 +29,7 @@ Both questions matter. They are different questions.
 
 ## When NOT to call
 
-- The token is not on **Base**. This checks Base only; other chains return nothing useful.
+- The token is on a network this does not cover. Served on: base, polygon, arbitrum. Per network — base (13 liquidity factories + uniswap-v4/pancakeswap-infinity, priced on uniswap-v3/aerodrome/aerodrome-cl-1/aerodrome-cl-2/aerodrome-cl-3/uniswap-v4); polygon (15 liquidity factories + uniswap-v4, priced on uniswap-v3/quickswap/uniswap-v4); arbitrum (10 liquidity factories + uniswap-v4, priced on uniswap-v3/camelot-v3/uniswap-v4). The exit pot and the quote are measured on DIFFERENT venue lists by design: the pot only needs pool discovery and balances, a quote needs a quoter we have confirmed against the live market. Venues that count toward the exit pot but are NOT in the price: base — pancakeswap-v3, sushiswap-v3, uniswap-v2, sushiswap-v2, pancakeswap-v2, baseswap, alienbase, swapbased, pancakeswap-infinity; polygon — sushiswap-v3, retro, ramses-v3, quickswap-v3, w-dex, quickswap-v2, uniswap-v2, sushiswap-v2, dooar, vulcandex, apeswap, fraxswap, wault, polycat; arbitrum — pancakeswap-v3, sushiswap-v3, ramses-v2, solidly-v3, ramses-v3, sushiswap-v2, camelot-v2, uniswap-v2. On those the quote can be worse than the market while the safety verdict still sees that liquidity. A network that is not listed answers 422 — we do not publish a verdict where we have not measured the exit.
 - The wallet holds only majors (BTC, ETH, stablecoins) — there is no long-tail risk to measure.
 - The user wants a price prediction or an investment opinion. This does not do that.
 
@@ -38,7 +38,7 @@ Both questions matter. They are different questions.
 POST to `https://api.getplexa.com/v1/pretrade/check` (aliases: `/v1/token-safety`, `/v1/rug-check`).
 
 ```json
-{ "token": "0x<erc20 address on Base>", "sizeUSD": "1000" }
+{ "token": "0x<erc20 address>", "sizeUSD": "1000", "chain": "base" }
 ```
 
 The endpoint is paid per call over **x402** (`exact` scheme, EIP-3009, Base).
@@ -49,7 +49,7 @@ inspect the 402 first, show the user the amount, pay only after approval.
 
 ### The first call is free
 
-First call from a new wallet is FREE — the full response, every field, same engine as a paid call. No trial tier, no reduced answer: only the COUNT is limited (one per wallet). Sign the x402 payment as usual; nothing is settled on-chain for that first call.
+First call from a new wallet is FREE — the full response, every field, same engine as a paid call. No trial tier, no reduced answer: only the COUNT is limited (one per wallet, across BOTH endpoints). Sign the x402 payment as usual; nothing is settled on-chain for that first call. P82 — you do not have to take that on trust: every 200 response carries `freeTrialApplied` — true when THAT call was served free, false when it was billed.
 
 Use this before asking anyone to approve a payment.
 
@@ -60,15 +60,18 @@ The response is JSON. The fields that decide anything:
 | field | how to read it |
 |---|---|
 | `verdict: "avoid"` | A trap was **measured at this block**: no venue to sell into, the exit pot is under 5% of the asked size, or trading is gated. `triggers` names which one. |
-| `verdict: "clear"` | **Scope: none of the checks that can PROVE a trap fired.** That is the whole claim — it covers proven traps and nothing else. Structural risk lives in `risk_profile`, and how completely the checks ran lives in `coverage` and `liquidityCoverage`. |
-| `triggers` | Which trap fired, by name. Empty on `clear`. |
+| `verdict: "clear"` | **Scope: none of the checks that can PROVE a trap fired, AND the exit check reached a conclusion.** That is the whole claim — it covers proven traps and nothing else. Structural risk lives in `risk_profile`, and how completely the checks ran lives in `coverage` and `liquidityCoverage`. |
+| `verdict: "unknown"` | No trap fired **and the exit check did not reach a conclusion** (`liquidityCoverage.conclusive: false`) — so this call establishes neither a trap nor its absence. `reasons` carries `exit-coverage-incomplete:<what>`. Do not read it as `clear`: it is "not checked", not "checked, fine". |
+| `triggers` | Which trap fired, by name. Empty unless the verdict is `avoid`. |
 | `confidence` | How complete the evidence behind the verdict was. Read it together with `coverage` and `liquidityCoverage`. |
-| `coverage.axesReporting` / `axesExpected` | How many of the 5 axes reported. The axes are `age` (how long since the first transfer), `concentration` (what share of supply the top-1 and top-10 holders hold), `liquidity` (how many pools and venues, and the exit pot in USD a sell is paid from), `oracle` (whether an independent price cross-check exists, and how far it disagrees), `transferability` (tax, blacklist, max-size and trading-gate fingerprints on the contract). Fewer than expected means parts of the check could not be conclusive. |
+| `coverage.axesReporting` / `axesExpected` | How many of the 5 axes reported. The axes are `age` (how long since the first transfer), `concentration` (what share of supply the top-1 and top-10 holders hold), `liquidity` (how many pools and venues, and the exit pot in USD a sell can actually reach — across up to TWO hops (pairs against WETH/USDC, plus pairs against any other counter asset whose own exit was confirmed)), `oracle` (whether an independent price cross-check exists, and how far it disagrees), `transferability` (tax, blacklist, max-size and trading-gate fingerprints on the contract). Fewer than expected means parts of the check could not be conclusive. |
 | `liquidityCoverage.conclusive` | Whether the exit check reached a conclusion. `true` — every covered factory was queried and the result stands. `false` — an AMM that cannot be measured pool-by-pool holds this token, and the exit triggers are not raised on this call. |
 | `liquidityCoverage.poolsFound` / `factoriesChecked` | `poolsFound: 0` with `factoriesChecked: 13` is a measurement: every covered factory was asked and no pool exists. `poolsFound: null` with `factoriesChecked: 0` means discovery did not run at all — a different state, and the two are distinguishable without reading any text. |
 | `liquidityCoverage.unmeasuredVenues` | How many AMMs hold this token but cannot be measured pool-by-pool (singleton AMMs such as Uniswap v4 keep every pool inside one contract). Their names are in `unmeasuredVenueNames`. |
 | `liquidityCoverage.venuesUnread` | Of the unmeasured venues, how many simply did not answer on THIS call, as opposed to AMMs that cannot be measured by design. A non-zero value is about the call, not about the token. |
 | `liquidityCoverage.singletonPoolsCounted` / `singletonPoolsRejected` / `singletonPoolsSeen` | Singleton AMMs (Uniswap v4) keep every pool inside one contract, so a sale is SIMULATED per pool through the canonical V4Quoter — hooks execute during that simulation. `singletonPoolsSeen` is how many pools of the pair were found, `singletonPoolsCounted` how many simulations succeeded (their proceeds are inside `exitLiquidityUsd`), `singletonPoolsRejected` how many the chain refused: a refusal is a measurement about that pool, not a gap in the data. |
+| `liquidityCoverage.secondHopAssetsSeen` / `secondHopAssetsCounted` / `secondHopAssetsRejected` | 🔴 A token can be perfectly sellable against some asset that is NOT WETH or USDC (measured on Base: HALO trades against VIRTUAL, three tokens of one family against ADS, SOGNI against USDT). Until 2026-08-27 the pot did not look there and answered "no exit". `secondHopAssetsSeen` is how many such counter assets the factories list a pool for with this token — enumerated from the factories' own pool-creation events, so no list of "good" assets is involved. `secondHopAssetsCounted` is how many of those roads were CONFIRMED: the counter asset has its own exit to USDC that the engine itself quoted. `secondHopAssetsRejected` is how many could not be confirmed — they add nothing to the pot AND make the exit inconclusive, never a silent zero. |
+| `liquidityCoverage.secondHopUsd` / `secondHopAssets` / `secondHopTruncated` | How many dollars of `exitLiquidityUsd` came from those confirmed roads, which assets carry them (`SYMBOL:usd`), and whether more roads existed than the per-call cap. The pot takes the BOTTLENECK of the two hops — the counter asset sitting in the token's pair valued at its own mid, against what that asset's market actually pays for it — never their sum. The search runs only when the WETH/USDC pot is below the drain floor: above it another road cannot change the answer. |
 | `liquidityCoverage.singletonPoolsHooked` | Of the pools seen, how many carry a hook with swap permissions. Derived from the hook address bits, no extra call. A hook is arbitrary code in the swap path; the simulation runs through it rather than around it. |
 | `liquidityCoverage.singletonScanTruncated` | `true` — the singleton scan hit its work cap and some pools were left unqueried. Reported whether or not it changed the answer. |
 | `liquidityCoverage.asOfBlockFirst` / `asOfBlock` | The Base blocks at the start and the end of the liquidity reads. Equal — the axis was read inside one block and is reproducible at that block. Different — no single block describes it, and the gap between them is the size of that uncertainty. |
@@ -105,7 +108,9 @@ and the map is the only way to tell them apart.
 
 ### Two answers side by side
 
-The same `verdict` word covers two different states. The difference is in the numbers.
+Two states that look alike from the outside and are not the same claim. Until
+2026-08-27 both answered `clear`, and the difference lived only in the numbers
+below; now the verdict word itself separates them.
 
 ```json
 { "verdict": "avoid", "triggers": ["NO_EXIT_VENUE"],
@@ -114,16 +119,19 @@ The same `verdict` word covers two different states. The difference is in the nu
 Every covered factory was queried, no pool exists. The exit check reached a conclusion.
 
 ```json
-{ "verdict": "clear", "triggers": [],
+{ "verdict": "unknown", "triggers": [],
+  "reasons": ["exit-coverage-incomplete:uniswap-v4,singleton-scan-truncated — ..."],
   "liquidityCoverage": { "conclusive": false, "poolsFound": 0, "factoriesChecked": 13,
                          "unmeasuredVenues": 1, "unmeasuredVenueNames": ["uniswap-v4"] } }
 ```
 No proven trap fired, and the exit check did not reach a conclusion: an AMM holding
-this token cannot be measured pool-by-pool.
+this token could not be measured pool-by-pool, or the sweep hit its work cap. The
+absence of a trap is NOT established — treat it as unchecked, not as clean.
 
 ## Limits
 
-- **Base only.** The exit pot is measured across 13 liquidity factories
+- **Coverage is per network, and it differs.** Served on: base, polygon, arbitrum. Per network — base (13 liquidity factories + uniswap-v4/pancakeswap-infinity, priced on uniswap-v3/aerodrome/aerodrome-cl-1/aerodrome-cl-2/aerodrome-cl-3/uniswap-v4); polygon (15 liquidity factories + uniswap-v4, priced on uniswap-v3/quickswap/uniswap-v4); arbitrum (10 liquidity factories + uniswap-v4, priced on uniswap-v3/camelot-v3/uniswap-v4). The exit pot and the quote are measured on DIFFERENT venue lists by design: the pot only needs pool discovery and balances, a quote needs a quoter we have confirmed against the live market. Venues that count toward the exit pot but are NOT in the price: base — pancakeswap-v3, sushiswap-v3, uniswap-v2, sushiswap-v2, pancakeswap-v2, baseswap, alienbase, swapbased, pancakeswap-infinity; polygon — sushiswap-v3, retro, ramses-v3, quickswap-v3, w-dex, quickswap-v2, uniswap-v2, sushiswap-v2, dooar, vulcandex, apeswap, fraxswap, wault, polycat; arbitrum — pancakeswap-v3, sushiswap-v3, ramses-v2, solidly-v3, ramses-v3, sushiswap-v2, camelot-v2, uniswap-v2. On those the quote can be worse than the market while the safety verdict still sees that liquidity. A network that is not listed answers 422 — we do not publish a verdict where we have not measured the exit.
+- On **Base** the exit pot is measured across 13 liquidity factories
   (Uniswap v3, Aerodrome AMM and Slipstream, PancakeSwap v3, SushiSwap v3 and the
   v2 family), plus Uniswap v4 by per-pool simulation. Prices come from Uniswap v3,
   Aerodrome, Aerodrome Slipstream and Uniswap v4 — the venues whose quoter we have
