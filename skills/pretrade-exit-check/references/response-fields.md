@@ -33,7 +33,7 @@ ones present in the live capture at the bottom of this page.
 |---|---|---|
 | `age` | how long since the first transfer | `ageDays`, `genesisBlock` |
 | `concentration` | what share of supply the top-1 and top-10 holders hold | `top1SharePct`, `top10SharePct`, `holders`, `holdersExact`, `source`, `asOfBlock`, `ageSec`, `stale` |
-| `liquidity` | how many pools and venues, and the exit pot in USD a sell can actually reach — across up to TWO hops (pairs against WETH/USDC, plus pairs against any other counter asset whose own exit was confirmed) | `poolCount`, `venueCount`, `largestPoolSharePct`, `exitLiquidityUsd` |
+| `liquidity` | how many pools and venues, and the exit pot in USD — since 20.09.2026 that pot is what SELLING THE POSITION returns, measured by quoting the sale, with the best road taken against the second-hop roads and never their sum. `exitPotBasis` says which number you got (position-sale = measured proceeds, second-hop = a counter-asset road, pool-inventory = the sale could not be quoted this call), and what the pools HOLD is published beside it as `exitPoolInventoryUsd` — an upper bound, not a promise | `poolCount`, `venueCount`, `largestPoolSharePct`, `exitLiquidityUsd` |
 | `oracle` | whether an independent price cross-check exists, and how far it disagrees | `source`, `deviationBps`, `stalenessSec` |
 | `transferability` | tax, blacklist, max-size and trading-gate fingerprints on the contract | `sellTaxRaw`, `buyTaxRaw`, `hasBlacklist`, `hasMaxLimit`, `tradingEnabled`, `fingerprints` |
 
@@ -216,7 +216,7 @@ ones present in the live capture at the bottom of this page.
 ## Beyond the verdict: the six context blocks
 
 Added by later versions of the engine, so they are shown from a SECOND live
-capture — token `0x4200000000000000000000000000000000000006` (WETH), captured **2026-08-27T14:00:51.213Z**. Two
+capture — token `0x4200000000000000000000000000000000000006` (WETH), captured **2026-09-22T06:49:51.444Z**. Two
 measurements, kept apart on purpose: the capture above has all 5 axes
 reporting, this one has the market vendor answering in full. Neither is edited.
 
@@ -228,12 +228,12 @@ reporting, this one has the market vendor answering in full. Neither is edited.
   "name": "Wrapped Ether",
   "symbol": "WETH",
   "decimals": 18,
-  "totalSupplyRaw": "226130074043909151045427",
-  "totalSupply": 226130.07404390915,
+  "totalSupplyRaw": "247969942702315092479576",
+  "totalSupply": 247969.94270231508,
   "note": "name, symbol, decimals and totalSupply read straight from the token contract at this block"
  },
  "valuation": {
-  "fdvExecutableUsd": 564516515.2017463,
+  "fdvExecutableUsd": 677761154.5471897,
   "basis": "totalSupply(this chain) x executablePrice(at sizeUSD)",
   "note": "fully-diluted value at the price your size can actually execute at, not at spot. Two reasons it may differ from a market-data site: the executable price is worse than spot on thin books, and totalSupply is THIS chain's supply — for a bridged token the global figure is larger. The vendor's global figure travels in this same response as market.marketCapUsd: the two are DIFFERENT quantities, and a large gap between them is the bridged supply plus the spot-vs-executable spread, not a contradiction"
  },
@@ -243,7 +243,7 @@ reporting, this one has the market vendor answering in full. Neither is edited.
   "isMintable": false,
   "creatorAddress": "0xe8a3ecea7d6a688ee903173024225357ddf29e93",
   "creatorBalance": 0.000289172466091074,
-  "creatorSharePct": 1.2787881811550793e-7,
+  "creatorSharePct": 1.1661593455228647e-7,
   "note": "no owner()/getOwner() answered — ownership is unknown, which is NOT the same as renounced; no known mint selector in the bytecode (heuristic: proxies and assembly dispatchers can hide one); creator inferred from the sender of the first transfer — a candidate, not a proven deployer"
  },
  "dormancy": {
@@ -253,10 +253,10 @@ reporting, this one has the market vendor answering in full. Neither is edited.
   "note": "not computed: it rests on the holder axis, and that axis produced no block for this token (concentration source: none)"
  },
  "market": {
-  "priceUsdSpot": 2490.85,
-  "volume24hUsd": 263860126.61999997,
-  "marketCapUsd": 559276105,
-  "holderCount": 5232994,
+  "priceUsdSpot": 2730.65,
+  "volume24hUsd": 321466695.2499998,
+  "marketCapUsd": 676994547,
+  "holderCount": 5266827,
   "note": "third-party market data, republished as-is and signed as theirs in `sources` — we did not measure any of it. priceUsdSpot is DexScreener's SPOT print from the deepest Base pool for this token, NOT the price your order gets: that one is quote.executablePrice, it depends on sizeUSD, and on a thin book it is worse than spot. marketCapUsd is the vendor's GLOBAL figure — every chain, their supply source. Our valuation.fdvExecutableUsd is a DIFFERENT quantity: THIS chain's totalSupply times the price your size can execute at. For a bridged token ours is legitimately the smaller number, and the gap is the bridged supply plus the spot-vs-executable spread. Compare them, do not equate them. volume24hUsd sums DexScreener's 24h volume over the 30 Base pair(s) where this token is the BASE asset; pairs where it is the quote asset are not counted. holderCount is GoPlus's count of addresses on this chain — read it with the same caution as concentration: pool, bridge and treasury CONTRACTS are addresses too"
  },
  "sources": {
@@ -312,7 +312,7 @@ because the shape of a MISSING answer is part of the contract.
 
 Same endpoint, a different token, captured earlier — WETH
 (`0x4200000000000000000000000000000000000006`), captured
-**2026-08-27T14:00:51.213Z**:
+**2026-09-22T06:49:51.444Z**:
 
 ```json
 { "coverage": {"axesExpected":5,"axesReporting":4},
